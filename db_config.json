@@ -1,1 +1,1 @@
-Increase the database connection pool size by setting pool_size=50 in the database configuration and adjust the JVM heap size to prevent out-of-memory errors
+pool_size=50

@@ -317,25 +317,42 @@
         const fallbackAddress = fallbackWallet.address.toLowerCase();
 
         // Dynamically resolve AliceDID based on MetaMask or local key
+        async function registerDID(did) {
+            try {
+                await fetch('/api/register-active-did', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ did })
+                });
+                console.log("[Dashboard] Registered active DID with server:", did);
+            } catch (err) {
+                console.error("[Dashboard] Failed to register active DID with server:", err);
+            }
+        }
+
         if (window.ethereum) {
             window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
                 if (accounts && accounts.length > 0) {
                     const addr = accounts[0].toLowerCase();
                     AliceDID = `did:t3n:${addr.startsWith("0x") ? addr.substring(2) : addr}`;
                     console.log(`[Dashboard] MetaMask active account: ${AliceDID}`);
+                    registerDID(AliceDID);
                 } else {
                     window.ethereum.request({ method: 'eth_requestAccounts' }).then(reqAccounts => {
                         if (reqAccounts && reqAccounts.length > 0) {
                             const addr = reqAccounts[0].toLowerCase();
                             AliceDID = `did:t3n:${addr.startsWith("0x") ? addr.substring(2) : addr}`;
                             console.log(`[Dashboard] MetaMask connected account: ${AliceDID}`);
+                            registerDID(AliceDID);
                         }
                     }).catch(err => {
                         console.warn("[Dashboard] MetaMask account connection rejected. Using default AliceDID.");
+                        registerDID(AliceDID);
                     });
                 }
             }).catch(err => {
                 console.error("[Dashboard] MetaMask accounts query failed:", err);
+                registerDID(AliceDID);
             });
 
             // Listen for account changes
@@ -344,11 +361,13 @@
                     const addr = accounts[0].toLowerCase();
                     AliceDID = `did:t3n:${addr.startsWith("0x") ? addr.substring(2) : addr}`;
                     console.log(`[Dashboard] MetaMask account changed to: ${AliceDID}`);
+                    registerDID(AliceDID);
                 }
             });
         } else {
             AliceDID = `did:t3n:${fallbackAddress.substring(2)}`;
             console.log(`[Dashboard] MetaMask not detected. Using local fallback DID: ${AliceDID}`);
+            registerDID(AliceDID);
         }
 
         const payloads = {

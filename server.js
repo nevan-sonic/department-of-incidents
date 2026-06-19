@@ -55,7 +55,28 @@ try {
     console.error("[Control Plane] Warning: Compiled modules not found. Run 'npm run compile' first to generate JS outputs.");
 }
 
-// REST Endpoints
+// Track the latest active DID from the browser dashboard
+let activeBrowserDID = process.env.ONCALL_ENGINEER_DID || "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c";
+
+app.post("/api/register-active-did", (req, res) => {
+    const { did } = req.body;
+    if (did && (did.startsWith("did:t3n:") || did.startsWith("did:t3:"))) {
+        activeBrowserDID = did;
+        console.log(`[Control Plane] Registered active browser DID: ${activeBrowserDID}`);
+        
+        // Seed z-namespace secrets for this DID
+        const matches = did.match(/did:t3n:([0-9a-fA-F]+)/) || did.match(/did:t3:user:([0-9a-fA-F]+)/);
+        if (matches && enclaveSimulator) {
+            const tid = matches[1].toLowerCase();
+            enclaveSimulator.createMap(tid, "secrets", "private", ["1001"], ["1001"]);
+            enclaveSimulator.setMapEntry(tid, "secrets", "github_token", process.env.GITHUB_TOKEN || process.env.T3_PRIVATE_KEY || "0x616355559f3b9880cf878749d4d8b42f5b7c9147552ce03793de353f9d3ef00d");
+        }
+        
+        return res.json({ status: "registered", did: activeBrowserDID });
+    }
+    res.status(400).json({ error: "Invalid DID format" });
+});
+
 // REST Endpoints
 app.post("/api/webhook", async (req, res) => {
     let rawAlert = req.body;
@@ -86,8 +107,8 @@ app.post("/api/webhook", async (req, res) => {
                 `Instance: ${labels.instance || "unknown"}`,
                 `GeneratorURL: ${promAlert.generatorURL || "N/A"}`
             ],
-            onCallEngineerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c", // Fallback Alice address
-            codeOwnerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c"
+            onCallEngineerDID: activeBrowserDID, // Fallback Alice address / active browser DID
+            codeOwnerDID: activeBrowserDID
         };
     } 
     // 2. Detect Datadog Webhook Payload
@@ -117,8 +138,8 @@ app.post("/api/webhook", async (req, res) => {
                 `Event Type: ${rawAlert.event_type || "N/A"}`,
                 `Monitor Status: ${rawAlert.alert_status || "N/A"}`
             ],
-            onCallEngineerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c",
-            codeOwnerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c"
+            onCallEngineerDID: activeBrowserDID,
+            codeOwnerDID: activeBrowserDID
         };
     } 
     // 3. Fallback to Standard T.A.C.T format

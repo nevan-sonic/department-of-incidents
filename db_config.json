@@ -1,1 +1,1 @@
-Increase the database connection pool size by setting pool_size=50 in the database configuration and adjust the JVM heap size to prevent out-of-memory errors
+increase the database connection pool size to at least 50 and implement a timeout of 30 seconds for idle connections

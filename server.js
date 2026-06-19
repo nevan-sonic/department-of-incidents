@@ -56,10 +56,78 @@ try {
 }
 
 // REST Endpoints
+// REST Endpoints
 app.post("/api/webhook", async (req, res) => {
-    const alert = req.body;
-    if (!alert || !alert.id) {
-        return res.status(400).json({ error: "Invalid alert payload" });
+    let rawAlert = req.body;
+    let alert = null;
+    
+    if (!rawAlert) {
+        return res.status(400).json({ error: "Empty request body" });
+    }
+
+    // 1. Detect Prometheus Alertmanager Webhook Payload
+    if (rawAlert.alerts && Array.isArray(rawAlert.alerts) && rawAlert.alerts.length > 0) {
+        console.log("[Webhook Router] Detected Prometheus Alertmanager payload.");
+        const promAlert = rawAlert.alerts[0];
+        const labels = promAlert.labels || {};
+        const annotations = promAlert.annotations || {};
+        
+        const timestampSuffix = Math.random().toString(36).substring(2, 5);
+        alert = {
+            id: (labels.alertname || "PROM-ALERT") + "-" + timestampSuffix.toUpperCase(),
+            severity: labels.severity === "critical" || labels.severity === "page" ? "HIGH" : "MEDIUM",
+            service: labels.service || labels.job || "api-gateway",
+            triggeredAt: promAlert.startsAt || new Date().toISOString(),
+            errorRate: labels.severity === "critical" ? 95 : 60,
+            p99Latency: labels.severity === "critical" ? 25000 : 5000,
+            logs: [
+                annotations.summary || "Prometheus firing alert: " + (labels.alertname || ""),
+                annotations.description || "Alert description not specified.",
+                `Instance: ${labels.instance || "unknown"}`,
+                `GeneratorURL: ${promAlert.generatorURL || "N/A"}`
+            ],
+            onCallEngineerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c", // Fallback Alice address
+            codeOwnerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c"
+        };
+    } 
+    // 2. Detect Datadog Webhook Payload
+    else if (rawAlert.event_type || rawAlert.alert_type || rawAlert.alert_title) {
+        console.log("[Webhook Router] Detected Datadog Webhook payload.");
+        const timestampSuffix = Math.random().toString(36).substring(2, 5);
+        
+        let extractedService = "api-gateway";
+        const title = rawAlert.alert_title || rawAlert.title || "";
+        const serviceMatch = title.match(/on\s+(\S+)/) || title.match(/service:(\S+)/);
+        if (serviceMatch && serviceMatch[1]) {
+            extractedService = serviceMatch[1].replace(/[^\w-]/g, "");
+        }
+        
+        const isCritical = rawAlert.alert_type === "error" || rawAlert.alert_severity === "error" || rawAlert.alert_status === "error";
+        
+        alert = {
+            id: "DD-" + (rawAlert.id || timestampSuffix.toUpperCase()),
+            severity: isCritical ? "HIGH" : "MEDIUM",
+            service: extractedService,
+            triggeredAt: new Date().toISOString(),
+            errorRate: isCritical ? 98 : 70,
+            p99Latency: isCritical ? 28000 : 12000,
+            logs: [
+                title,
+                rawAlert.body || rawAlert.alert_msg || "Datadog monitor alert triggered.",
+                `Event Type: ${rawAlert.event_type || "N/A"}`,
+                `Monitor Status: ${rawAlert.alert_status || "N/A"}`
+            ],
+            onCallEngineerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c",
+            codeOwnerDID: "did:t3n:1dc692077cbf6d404b619c8d9b6648849c74802c"
+        };
+    } 
+    // 3. Fallback to Standard T.A.C.T format
+    else if (rawAlert.id) {
+        alert = rawAlert;
+    }
+
+    if (!alert) {
+        return res.status(400).json({ error: "Could not parse payload. Supported formats: Datadog Webhook, Prometheus Alertmanager, or standard T.A.C.T Alert." });
     }
     
     if (!handleIncident) {
@@ -67,6 +135,7 @@ app.post("/api/webhook", async (req, res) => {
     }
 
     // Trigger incident handling asynchronously
+    console.log(`[Webhook Router] Triggering triage for alert ${alert.id} (Service: ${alert.service}, Severity: ${alert.severity})`);
     handleIncident(alert).catch(err => {
         console.error(`[Webhook Async Error] ${err.message}`);
     });

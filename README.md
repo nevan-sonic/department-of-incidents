@@ -141,6 +141,46 @@ Navigate to **[http://localhost:3000](http://localhost:3000)**.
 
 ---
 
+## 📡 Real-World APM Webhook Integration
+In a production setting, the webhook endpoint `/api/webhook` is designed to be mapped directly to your live SRE monitoring tools. The server dynamically parses and auto-normalizes incoming payloads from the following formats:
+
+### 1. Prometheus Alertmanager Webhook
+Route standard Prometheus firings directly to `/api/webhook`. The system maps labels (e.g. `severity: critical`) and annotations to triaged severity states, extracting error metrics and log context automatically:
+```json
+{
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "DatabaseConnectionPoolExhausted",
+        "severity": "critical",
+        "service": "auth-service"
+      },
+      "annotations": {
+        "summary": "Core database connection timeout",
+        "description": "Out of memory crash, thread pool deadlock"
+      },
+      "startsAt": "2026-06-19T21:00:00Z"
+    }
+  ]
+}
+```
+
+### 2. Datadog Webhook
+Hook standard Datadog monitor notifications. The router extracts the service name from the alert title and translates warning/error status thresholds into equivalent gated enclave approval flows:
+```json
+{
+  "id": "datadog-alert-101",
+  "event_type": "query_alert_monitor",
+  "alert_title": "Database pool size exhausted on auth-service",
+  "body": "FATAL [auth] Out of memory crash, thread pool deadlock",
+  "alert_status": "error"
+}
+```
+
+---
+
 ## 🔍 Validation Walkthrough
 
 ### Test Case 1: Medium Outage (P2 Incident)

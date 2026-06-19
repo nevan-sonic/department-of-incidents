@@ -1,0 +1,86 @@
+package z:department-of-incidents@0.1.0;
+
+interface tenant-context {
+    tenant-did: func() -> list<u8>;
+}
+
+interface logging {
+    info: func(msg: string);
+    warn: func(msg: string);
+    error: func(msg: string);
+}
+
+interface kv-store {
+    get: func(map: string, key: list<u8>) -> result<option<list<u8>>, string>;
+    put: func(map: string, key: list<u8>, value: list<u8>) -> result<_, string>;
+    delete: func(map: string, key: list<u8>) -> result<_, string>;
+}
+
+interface http {
+    enum verb {
+        get,
+        post,
+        put,
+        delete,
+        head,
+        patch,
+        options
+    }
+    record request {
+        method: verb,
+        url: string,
+        headers: option<list<tuple<string, string>>>,
+        payload: option<list<u8>>,
+    }
+    record response {
+        code: u16,
+        headers: list<tuple<string, string>>,
+        payload: list<u8>,
+    }
+    call: func(req: request) -> result<response, string>;
+}
+
+interface http-with-placeholders {
+    variant http-error {
+        egress-denied(string),
+        placeholder-denied(string),
+        placeholder-unknown(string),
+        placeholder-no-user-context,
+        upstream-error(string),
+    }
+    record request {
+        method: string,
+        url: string,
+        headers: option<list<tuple<string, string>>>,
+        body: option<list<u8>>,
+    }
+    record response {
+        code: u16,
+        headers: list<tuple<string, string>>,
+        body: list<u8>,
+    }
+    call: func(req: request) -> result<response, http-error>;
+}
+
+interface contracts {
+    record generic-input {
+        input: option<list<u8>>,
+        user-profile: option<list<u8>>,
+        context: option<list<u8>>,
+    }
+
+    investigate-logs: func(req: generic-input) -> result<list<u8>, string>;
+    create-fix-pr: func(req: generic-input) -> result<list<u8>, string>;
+    merge-fix: func(req: generic-input) -> result<list<u8>, string>;
+    revert-commit: func(req: generic-input) -> result<list<u8>, string>;
+}
+
+world department-of-incidents {
+    import tenant-context;
+    import logging;
+    import kv-store;
+    import http;
+    import http-with-placeholders;
+
+    export contracts;
+}

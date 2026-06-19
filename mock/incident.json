@@ -1,0 +1,16 @@
+{
+  "id": "INC-2026-0847",
+  "severity": "MEDIUM",
+  "service": "api-gateway",
+  "triggeredAt": "2026-06-19T14:32:11Z",
+  "errorRate": 78.4,
+  "p99Latency": 12400,
+  "logs": [
+    "ERROR [pool] Connection pool exhausted (max=20, active=20)",
+    "WARN  [db] Timeout acquiring connection after 5000ms",
+    "ERROR [api] Request failed: TimeoutError: getConnection()",
+    "INFO  [traffic] Spike: 4200 req/min (baseline: 800 req/min)"
+  ],
+  "onCallEngineerDID": "did:t3n:c8eb415587d29e3155bb615149156b0ce5f2ecc5",
+  "codeOwnerDID": "did:t3n:c8eb415587d29e3155bb615149156b0ce5f2ecc5"
+}

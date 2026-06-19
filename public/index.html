@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department of Incidents - T3N Control Plane</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Ethers JS (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="dashboard-container">
+        
+        <!-- Header -->
+        <header class="navbar">
+            <div class="logo-area">
+                <div class="logo-icon"></div>
+                <div class="logo-text">
+                    <h1>DEPARTMENT OF INCIDENTS</h1>
+                    <p class="tagline">TEE-Secured Agentic Incident Commander | Terminal 3 Network</p>
+                </div>
+            </div>
+            <div class="status-badge connected">
+                <span class="pulse-dot"></span>
+                T3N TESTNET ACTIVE
+            </div>
+        </header>
+
+        <!-- Grid Layout -->
+        <div class="grid-layout">
+            
+            <!-- Column 1: Control Panel -->
+            <div class="card control-card">
+                <h2>1. INCIDENT MOCK TRIGGERS</h2>
+                <p class="card-desc">Simulate production alerts to trigger the AI incident commander. Select an alert scenario to test severity-gated routing.</p>
+                
+                <div class="scenario-selector">
+                    <button class="scenario-btn active" onclick="selectScenario('P2', this)">
+                        <div class="btn-indicator p2"></div>
+                        <div class="btn-label">
+                            <h3>DB Connection Pool (P2)</h3>
+                            <p>Medium Severity - 1 Signature (Bob)</p>
+                        </div>
+                    </button>
+                    <button class="scenario-btn" onclick="selectScenario('P1', this)">
+                        <div class="btn-indicator p1"></div>
+                        <div class="btn-label">
+                            <h3>Gateway Failure (P1)</h3>
+                            <p>High Severity - 2 Co-Signatures & Rollback</p>
+                        </div>
+                    </button>
+                    <button class="scenario-btn" onclick="selectScenario('P3', this)">
+                        <div class="btn-indicator p3"></div>
+                        <div class="btn-label">
+                            <h3>Latency Warning (P3)</h3>
+                            <p>Low Severity - Auto-Resolve Comment</p>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="payload-preview-box">
+                    <h3>Webhook Payload Preview:</h3>
+                    <pre id="payload-display"></pre>
+                </div>
+
+                <button class="action-btn trigger-btn" onclick="triggerAlert()">TRIGGER APM ALERT</button>
+            </div>
+
+            <!-- Column 2: Live Terminal Console -->
+            <div class="card terminal-card">
+                <h2>2. SECURE ENCLAVE LOGS</h2>
+                <p class="card-desc">Real-time trace logs detailing cryptographic handshake, TEE isolation, and LLM diagnostic fixes.</p>
+                
+                <div class="terminal-box" id="terminal-logs">
+                    <div class="terminal-line system">[System] Listening for incoming incident webhooks...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-layout second-row">
+            <!-- Column 3: Cryptographic Approval Guard -->
+            <div class="card approvals-card">
+                <h2>3. T3 DELEGATION & APPROVAL GUARD</h2>
+                <p class="card-desc">Gated transaction approvals. Requires EIP-191 personal signatures from code owners or on-call engineers.</p>
+                
+                <div id="no-approvals" class="empty-state">
+                    <div class="shield-icon"></div>
+                    <p>No pending delegation requests. System is secure.</p>
+                </div>
+
+                <div id="approvals-list" class="approvals-container" style="display: none;">
+                    <!-- Pending approvals render here -->
+                </div>
+            </div>
+
+            <!-- Column 4: Immutable Audit Ledger -->
+            <div class="card ledger-card">
+                <h2>4. IMMUTABLE T3 AUDIT LEDGER</h2>
+                <p class="card-desc">Tamper-proof record of every session handshake, authorization grant, code merge, and rollback reverted.</p>
+                
+                <div class="ledger-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>Actor DID</th>
+                                <th>Cryptographic Credential / Proof</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-rows">
+                            <tr>
+                                <td colspan="4" class="empty-table">No ledger entries recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid-layout third-row" style="grid-template-columns: 1fr; margin-top: 1.5rem;">
+            <!-- Column 5: Active System Incidents -->
+            <div class="card incidents-card">
+                <h2>5. ACTIVE SYSTEM INCIDENTS</h2>
+                <p class="card-desc">Real-time status of APM alerts routed through the T3 secure pipeline. Trigger a manual rollback to revert any merged fixes.</p>
+                
+                <div class="ledger-table-wrapper" style="max-height: 250px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Service Name</th>
+                                <th>Severity</th>
+                                <th>Current Status</th>
+                                <th>PR / Commit Actions</th>
+                                <th>T3 Execution Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidents-rows">
+                            <tr>
+                                <td colspan="6" class="empty-table">No active incidents triggered yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built for the <strong>Terminal 3 Agent Dev Kit Bounty Challenge</strong> &copy; 2026. Secured with hardware TEE enclaves.</p>
+        </footer>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Mocks for DIDs matches the .env config
+        let AliceDID = "did:t3n:c8eb415587d29e3155bb615149156b0ce5f2ecc5"; // Matches user private key address
+        const BobDID = "did:t3:user:bob";
+        const CharlieDID = "did:t3:user:charlie";
+
+        // Derive address from the developer private key for fallback local signing
+        const fallbackPrivateKey = "0x616355559f3b9880cf878749d4d8b42f5b7c9147552ce03793de353f9d3ef00d";
+        const fallbackWallet = new ethers.Wallet(fallbackPrivateKey);
+        const fallbackAddress = fallbackWallet.address.toLowerCase();
+
+        // Dynamically resolve AliceDID based on MetaMask or local key
+        if (window.ethereum) {
+            window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
+                if (accounts && accounts.length > 0) {
+                    const addr = accounts[0].toLowerCase();
+                    AliceDID = `did:t3n:${addr.startsWith("0x") ? addr.substring(2) : addr}`;
+                    console.log(`[Dashboard] MetaMask active account: ${AliceDID}`);
+                } else {
+                    window.ethereum.request({ method: 'eth_requestAccounts' }).then(reqAccounts => {
+                        if (reqAccounts && reqAccounts.length > 0) {
+                            const addr = reqAccounts[0].toLowerCase();
+                            AliceDID = `did:t3n:${addr.startsWith("0x") ? addr.substring(2) : addr}`;
+                            console.log(`[Dashboard] MetaMask connected account: ${AliceDID}`);
+                        }
+                    }).catch(err => {
+                        console.warn("[Dashboard] MetaMask account connection rejected. Using default AliceDID.");
+                    });
+                }
+            }).catch(err => {
+                console.error("[Dashboard] MetaMask accounts query failed:", err);
+            });
+
+            // Listen for account changes
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts && accounts.length > 0) {
+                    const addr = accounts[0].toLowerCase();
+                    AliceDID = `did:t3n:${addr.startsWith("0x") ? addr.substring(2) : addr}`;
+                    console.log(`[Dashboard] MetaMask account changed to: ${AliceDID}`);
+                }
+            });
+        } else {
+            AliceDID = `did:t3n:${fallbackAddress.substring(2)}`;
+            console.log(`[Dashboard] MetaMask not detected. Using local fallback DID: ${AliceDID}`);
+        }
+
+        const payloads = {
+            P2: {
+                id: "INC-2026-0847",
+                severity: "MEDIUM",
+                service: "api-gateway",
+                triggeredAt: new Date().toISOString(),
+                errorRate: 78.4,
+                p99Latency: 12400,
+                logs: [
+                    "ERROR [pool] Connection pool exhausted (max=20, active=20)",
+                    "WARN  [db] Timeout acquiring connection after 5000ms",
+                    "ERROR [api] Request failed: TimeoutError: getConnection()",
+                    "INFO  [traffic] Spike: 4200 req/min (baseline: 800 req/min)"
+                ],
+                onCallEngineerDID: AliceDID,
+                codeOwnerDID: AliceDID // For ease of signing in demo, codeowner is Alice
+            },
+            P1: {
+                id: "INC-2026-0912",
+                severity: "HIGH",
+                service: "auth-service",
+                triggeredAt: new Date().toISOString(),
+                errorRate: 98.2,
+                p99Latency: 28400,
+                logs: [
+                    "ERROR [auth] Core database connection timeout",
+                    "FATAL [main] Failed to initialize session cache",
+                    "ERROR [gateway] 502 Bad Gateway on login request",
+                    "FATAL [auth] Out of memory crash, thread pool deadlock"
+                ],
+                onCallEngineerDID: AliceDID,
+                codeOwnerDID: AliceDID
+            },
+            P3: {
+                id: "INC-2026-1011",
+                severity: "LOW",
+                service: "analytics-worker",
+                triggeredAt: new Date().toISOString(),
+                errorRate: 5.1,
+                p99Latency: 850,
+                logs: [
+                    "WARN  [queue] Queue size exceeded threshold (size=1420)",
+                    "INFO  [worker] Processing lag: 14.2s (baseline: 1.0s)",
+                    "WARN  [db] Query duration exceeded 500ms limit"
+                ],
+                onCallEngineerDID: AliceDID,
+                codeOwnerDID: AliceDID
+            }
+        };
+
+        let currentScenario = 'P2';
+        const loggedIncidentStates = {};
+
+        function selectScenario(scenario, element) {
+            currentScenario = scenario;
+            document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+            if (element) {
+                element.classList.add('active');
+            } else {
+                const index = scenario === 'P2' ? 0 : scenario === 'P1' ? 1 : 2;
+                const buttons = document.querySelectorAll('.scenario-btn');
+                if (buttons[index]) buttons[index].classList.add('active');
+            }
+            document.getElementById('payload-display').textContent = JSON.stringify(payloads[scenario], null, 2);
+        }
+
+        // Initialize display
+        selectScenario('P2');
+
+        function appendTerminalLog(msg, type = 'info') {
+            const box = document.getElementById('terminal-logs');
+            const div = document.createElement('div');
+            div.className = `terminal-line ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            div.innerHTML = `<span class="time">[${timestamp}]</span> ${msg}`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function triggerAlert() {
+            // Dynamically assign active DID and timestamp to the payload before sending
+            payloads[currentScenario].onCallEngineerDID = AliceDID;
+            payloads[currentScenario].codeOwnerDID = AliceDID;
+            payloads[currentScenario].triggeredAt = new Date().toISOString();
+
+            appendTerminalLog(`Dispatching alert payload for incident: ${payloads[currentScenario].id}...`, 'system');
+            
+            try {
+                const response = await fetch('/api/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloads[currentScenario])
+                });
+                const result = await response.json();
+                appendTerminalLog(`Alert received by control plane. Workflow started: ${result.status}`, 'success');
+            } catch (err) {
+                appendTerminalLog(`Webhook failure: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchLedger() {
+            try {
+                const response = await fetch(`/api/ledger?_=${Date.now()}`);
+                const list = await response.json();
+                const tbody = document.getElementById('ledger-rows');
+                
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="empty-table">No ledger entries recorded yet.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = list.map(entry => {
+                    const time = new Date(entry.timestamp).toLocaleTimeString();
+                    let proof = entry.credential || 'System Certified';
+                    if (proof.length > 30) {
+                        proof = proof.substring(0, 15) + '...' + proof.substring(proof.length - 15);
+                    }
+                    
+                    let details = '';
+                    if (entry.prUrl) details = `(PR #${entry.prUrl.split('/').pop()})`;
+                    if (entry.mergeCommit) details = `(Merge SHA: ${entry.mergeCommit.substring(0,7)})`;
+                    if (entry.targetCommit) details = `(Target Commit: ${entry.targetCommit.substring(0,7)})`;
+                    
+                    return `
+                        <tr>
+                            <td>${time}</td>
+                            <td><span class="ledger-action">${entry.action}</span> ${details}</td>
+                            <td class="did-cell">${entry.actor}</td>
+                            <td class="proof-cell" title="${entry.credential || ''}"><code>${proof}</code></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Ledger fetch error:", err);
+            }
+        }
+
+        async function fetchApprovals() {
+            try {
+                const response = await fetch(`/api/approvals?_=${Date.now()}`);
+                const list = await response.json();
+                
+                const container = document.getElementById('approvals-list');
+                const empty = document.getElementById('no-approvals');
+                
+                if (list.length === 0) {
+                    container.style.display = 'none';
+                    empty.style.display = 'flex';
+                    return;
+                }
+                
+                empty.style.display = 'none';
+                container.style.display = 'block';
+                
+                container.innerHTML = list.map(app => `
+                    <div class="approval-card">
+                        <div class="approval-header">
+                            <span class="approval-badge">PENDING T3 DELEGATION</span>
+                            <span class="approval-id">ID: ${app.id}</span>
+                        </div>
+                        <div class="approval-body">
+                            <p><strong>Incident ID:</strong> ${app.metadata.incidentId || 'Rollback Request'}</p>
+                            <p><strong>Required Approver:</strong> <code class="did">${app.approverDID}</code></p>
+                            <p><strong>Requested Scope:</strong> <code>${app.scope}</code></p>
+                        </div>
+                        <div class="approval-actions">
+                            <button class="action-btn approve-btn" onclick="signApproval('${app.id}', '${app.approverDID}')">Confirm & Sign with T3 Identity</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error("Approvals fetch error:", err);
+            }
+        }
+
+        async function signApproval(id, approverDID) {
+            appendTerminalLog(`Initiating EIP-191 Personal Sign signature challenge for approval: ${id}...`, 'system');
+            
+            const message = `Verify identity for incident resolution: ${id}`;
+            let signature = '';
+            
+            // Check for metamask connection
+            if (window.ethereum) {
+                try {
+                    appendTerminalLog("Requesting MetaMask signature for validation...", "info");
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = await provider.getSigner();
+                    signature = await signer.signMessage(message);
+                    appendTerminalLog(`Successfully signed challenge via MetaMask. Signature size: ${signature.length} bytes`, "success");
+                } catch (err) {
+                    appendTerminalLog(`MetaMask signing canceled or failed: ${err.message}. Falling back to browser memory key...`, "error");
+                }
+            }
+            
+            // Fallback: Generate signature locally if metamask fails or isn't present
+            if (!signature) {
+                try {
+                    // Use a mock wallet constructed from Alice's private key in .env
+                    // Address: 0xc8eb415587d29e3155bb615149156b0ce5f2ecc5
+                    // Private Key: 0x616355559f3b9880cf878749d4d8b42f5b7c9147552ce03793de353f9d3ef00d
+                    const privateKey = "0x616355559f3b9880cf878749d4d8b42f5b7c9147552ce03793de353f9d3ef00d";
+                    const wallet = new ethers.Wallet(privateKey);
+                    
+                    appendTerminalLog(`Signing message locally for address: ${wallet.address}`, "info");
+                    signature = await wallet.signMessage(message);
+                    appendTerminalLog(`Challenge signed locally using secure developer key. Signature: ${signature.substring(0, 20)}...`, "success");
+                } catch (err) {
+                    appendTerminalLog(`Fallback signing failed: ${err.message}`, "error");
+                    return;
+                }
+            }
+            
+            // Send signature back to server
+            try {
+                const response = await fetch('/api/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, signature })
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    appendTerminalLog(`T3 signature verified by enclave control plane. Grant authorized.`, 'success');
+                    fetchApprovals();
+                    fetchLedger();
+                } else {
+                    appendTerminalLog(`Signature verification failed: ${result.error}`, 'error');
+                }
+            } catch (err) {
+                appendTerminalLog(`API approval POST error: ${err.message}`, 'error');
+            }
+        }
+
+        async function triggerManualRollback(id) {
+            appendTerminalLog(`Initiating manual TEE rollback request for incident: ${id}...`, 'system');
+            try {
+                const response = await fetch(`/api/incidents/${id}/rollback`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    appendTerminalLog(`Rollback successfully initiated inside secure enclave simulator. Pending re-authentication.`, 'success');
+                } else {
+                    appendTerminalLog(`Rollback initialization failed: ${result.error}`, 'error');
+                }
+            } catch (err) {
+                appendTerminalLog(`Rollback API call error: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchIncidents() {
+            try {
+                const response = await fetch(`/api/incidents?_=${Date.now()}`);
+                const list = await response.json();
+                
+                const tbody = document.getElementById('incidents-rows');
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="empty-table">No active incidents triggered yet.</td></tr>`;
+                } else {
+                    tbody.innerHTML = list.map(inc => {
+                        const sevClass = inc.severity ? inc.severity.toLowerCase() : 'medium';
+                        const severityBadge = `<span class="severity-badge ${sevClass}">${inc.severity || 'MEDIUM'}</span>`;
+                        
+                        let prAction = 'N/A';
+                        if (inc.prUrl) {
+                            const prNum = inc.prNumber || inc.prUrl.split('/').pop();
+                            prAction = `<a href="${inc.prUrl}" target="_blank" style="color: hsl(196, 80%, 53%); text-decoration: none; font-weight: 600;">PR #${prNum}</a>`;
+                            if (inc.mergeCommit) {
+                                prAction += ` <code style="font-size:0.75rem; background:rgba(255,255,255,0.05); padding:0.1rem 0.2rem; border-radius:4px;">(${inc.mergeCommit.substring(0,7)})</code>`;
+                            }
+                        }
+                        
+                        let rollbackAction = 'N/A';
+                        // Show Rollback button if merged/resolved and we have a merge commit, and not already rolling back or rolled back
+                        const canRollback = inc.mergeCommit && (inc.status === 'Resolved' || inc.status === 'Monitoring Fix' || inc.status.startsWith('Failed') || inc.status === 'Failed Rollback');
+                        if (canRollback) {
+                            rollbackAction = `<button class="rollback-small-btn" onclick="triggerManualRollback('${inc.id}')">Manual Rollback</button>`;
+                        } else if (inc.status === 'Rolling Back' || inc.status === 'Rolled Back') {
+                            rollbackAction = `<span style="color: hsl(215, 20%, 50%); font-style: italic;">${inc.status}</span>`;
+                        }
+                        
+                        return `
+                            <tr>
+                                <td style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; font-weight:700;">${inc.id}</td>
+                                <td><code>${inc.service}</code></td>
+                                <td>${severityBadge}</td>
+                                <td><span class="status-badge-inline">${inc.status}</span></td>
+                                <td>${prAction}</td>
+                                <td>${rollbackAction}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+                
+                list.forEach(incident => {
+                    // Log trace based on status change to avoid duplicating output
+                    const lastState = loggedIncidentStates[incident.id];
+                    if (lastState !== incident.status) {
+                        loggedIncidentStates[incident.id] = incident.status;
+                        
+                        let logType = 'info';
+                        if (incident.status === 'Resolved') logType = 'success';
+                        if (incident.status.startsWith('Failed') || incident.status.includes('Regression')) logType = 'error';
+                        
+                        let extra = '';
+                        if (incident.status === 'Analyzing Logs in TEE' && incident.rootCause) {
+                            extra = `\n[Groq AI Diagnostic] Root Cause: ${incident.rootCause}`;
+                        }
+                        if (incident.status === 'Drafting Pull Request' && incident.prUrl) {
+                            extra = `\n[Git Engine] Created Pull Request: ${incident.prUrl} (Branch: ${incident.branch})`;
+                        }
+                        
+                        appendTerminalLog(`Incident ${incident.id}: Status changed to [${incident.status.toUpperCase()}]${extra}`, logType);
+                    }
+                });
+            } catch (err) {
+                console.error("Incidents fetch error:", err);
+            }
+        }
+
+        // Loop checks
+        setInterval(() => {
+            fetchApprovals();
+            fetchLedger();
+            fetchIncidents();
+        }, 1500);
+
+        // First load
+        fetchApprovals();
+        fetchLedger();
+    </script>
+</body>
+</html>

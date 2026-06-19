@@ -1,0 +1,10 @@
+node_modules/
+target/
+dist/
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+.tempmediaStorage/
+*.log

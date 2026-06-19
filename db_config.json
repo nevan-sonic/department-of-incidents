@@ -1,1 +1,1 @@
-Increase the database connection pool size by setting pool_size=20 and configure the JVM with adequate heap size by setting -Xmx1024m
+config.db.pool_size = 20, config.db.max_connections = 50

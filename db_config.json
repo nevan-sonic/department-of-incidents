@@ -1,1 +1,1 @@
-db_config.yaml: increase 'pool_size' from 10 to 50, and 'connection_timeout' from 5s to 30s
+Modify the database connection pool configuration to increase the pool size to at least 50

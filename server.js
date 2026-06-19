@@ -49,6 +49,19 @@ try {
         enclaveSimulator.createMap(derivedTid, "secrets", "private", ["1001"], ["1001"]);
         enclaveSimulator.setMapEntry(derivedTid, "secrets", "github_token", process.env.GITHUB_TOKEN || process.env.T3_PRIVATE_KEY || "0x616355559f3b9880cf878749d4d8b42f5b7c9147552ce03793de353f9d3ef00d");
     }
+
+    // Seed default ONCALL_ENGINEER_DID on startup if different
+    const defaultDid = process.env.ONCALL_ENGINEER_DID;
+    if (defaultDid) {
+        const matches = defaultDid.match(/did:t3n:([0-9a-fA-F]+)/) || defaultDid.match(/did:t3:user:([0-9a-fA-F]+)/);
+        if (matches) {
+            const defaultTid = matches[1].toLowerCase();
+            if (envTid.toLowerCase() !== defaultTid && derivedTid !== defaultTid) {
+                enclaveSimulator.createMap(defaultTid, "secrets", "private", ["1001"], ["1001"]);
+                enclaveSimulator.setMapEntry(defaultTid, "secrets", "github_token", process.env.GITHUB_TOKEN || process.env.T3_PRIVATE_KEY || "0x616355559f3b9880cf878749d4d8b42f5b7c9147552ce03793de353f9d3ef00d");
+            }
+        }
+    }
     
     console.log("[Control Plane] Enclave simulator loaded and private z-namespace secrets seeded.");
 } catch (e) {

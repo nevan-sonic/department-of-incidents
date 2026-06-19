@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <!-- Ethers JS (CDN) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.1/ethers.umd.min.js"></script>
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -71,9 +73,18 @@
                 <button class="action-btn trigger-btn" onclick="triggerAlert()">TRIGGER APM ALERT</button>
             </div>
 
-            <!-- Column 2: Live Terminal Console -->
+            <!-- Column 2: Live Telemetry Graph -->
+            <div class="card telemetry-card">
+                <h2>2. APM HEALTH MONITOR</h2>
+                <p class="card-desc">Real-time response latency (ms) and gateway error rates. Breaches trigger secure TEE pipeline routing.</p>
+                <div style="flex-grow:1; display:flex; align-items:center; justify-content:center; position:relative; min-height: 250px;">
+                    <canvas id="telemetryChart" style="max-height: 250px; width: 100%;"></canvas>
+                </div>
+            </div>
+
+            <!-- Column 3: Live Terminal Console -->
             <div class="card terminal-card">
-                <h2>2. SECURE ENCLAVE LOGS</h2>
+                <h2>3. SECURE ENCLAVE LOGS</h2>
                 <p class="card-desc">Real-time trace logs detailing cryptographic handshake, TEE isolation, and LLM diagnostic fixes.</p>
                 
                 <div class="terminal-box" id="terminal-logs">
@@ -85,7 +96,7 @@
         <div class="grid-layout second-row">
             <!-- Column 3: Cryptographic Approval Guard -->
             <div class="card approvals-card">
-                <h2>3. T3 DELEGATION & APPROVAL GUARD</h2>
+                <h2>4. T3 DELEGATION & APPROVAL GUARD</h2>
                 <p class="card-desc">Gated transaction approvals. Requires EIP-191 personal signatures from code owners or on-call engineers.</p>
                 
                 <div id="no-approvals" class="empty-state">
@@ -100,7 +111,7 @@
 
             <!-- Column 4: Immutable Audit Ledger -->
             <div class="card ledger-card">
-                <h2>4. IMMUTABLE T3 AUDIT LEDGER</h2>
+                <h2>5. IMMUTABLE T3 AUDIT LEDGER</h2>
                 <p class="card-desc">Tamper-proof record of every session handshake, authorization grant, code merge, and rollback reverted.</p>
                 
                 <div class="ledger-table-wrapper">
@@ -126,7 +137,7 @@
         <div class="grid-layout third-row" style="grid-template-columns: 1fr; margin-top: 1.5rem;">
             <!-- Column 5: Active System Incidents -->
             <div class="card incidents-card">
-                <h2>5. ACTIVE SYSTEM INCIDENTS</h2>
+                <h2>6. ACTIVE SYSTEM INCIDENTS</h2>
                 <p class="card-desc">Real-time status of APM alerts routed through the T3 secure pipeline. Trigger a manual rollback to revert any merged fixes.</p>
                 
                 <div class="ledger-table-wrapper" style="max-height: 250px;">
@@ -159,6 +170,142 @@
 
     <!-- Script Logic -->
     <script>
+        // Chart.js Telemetry Initialization
+        let telemetryChart;
+        const chartData = {
+            labels: Array(15).fill(''),
+            datasets: [
+                {
+                    label: 'Latency (ms)',
+                    data: Array(15).fill(80),
+                    borderColor: 'rgba(14, 165, 233, 1)',
+                    backgroundColor: 'rgba(14, 165, 233, 0.08)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'yLatency',
+                    pointRadius: 0
+                },
+                {
+                    label: 'Error Rate (%)',
+                    data: Array(15).fill(0),
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.03)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'yError',
+                    pointRadius: 0
+                }
+            ]
+        };
+
+        function initChart() {
+            const ctx = document.getElementById('telemetryChart').getContext('2d');
+            telemetryChart = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: { family: 'Outfit', size: 10 }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { display: false }
+                        },
+                        yLatency: {
+                            type: 'linear',
+                            position: 'left',
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: {
+                                color: 'rgba(14, 165, 233, 0.8)',
+                                font: { family: 'JetBrains Mono', size: 9 },
+                                callback: val => val + 'ms'
+                            },
+                            min: 0,
+                            suggestedMax: 200
+                        },
+                        yError: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { display: false },
+                            ticks: {
+                                color: 'rgba(239, 68, 68, 0.8)',
+                                font: { family: 'JetBrains Mono', size: 9 },
+                                callback: val => val + '%'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Live metrics generator based on state
+        let targetLatency = 80;
+        let targetError = 0;
+        let currentLatency = 80;
+        let currentError = 0;
+
+        function updateMetrics(status, severity) {
+            if (status === 'Triggered' || status === 'Analyzing Logs in TEE' || status === 'Classifying Severity' || status === 'Drafting Pull Request' || status === 'Awaiting Approvals') {
+                if (severity === 'HIGH') {
+                    targetLatency = 28400;
+                    targetError = 98.2;
+                } else if (severity === 'LOW') {
+                    targetLatency = 850;
+                    targetError = 5.1;
+                } else {
+                    targetLatency = 12400;
+                    targetError = 78.4;
+                }
+            } else if (status === 'Merging Fix' || status === 'Monitoring Fix') {
+                targetLatency = 150;
+                targetError = 1.2;
+            } else if (status === 'Regression Detected' || status === 'Rolling Back') {
+                targetLatency = 18900;
+                targetError = 80;
+            } else if (status === 'Resolved' || status === 'Rolled Back') {
+                targetLatency = 80;
+                targetError = 0;
+            } else {
+                targetLatency = 80;
+                targetError = 0;
+            }
+        }
+
+        function stepTelemetry() {
+            if (!telemetryChart) return;
+            
+            currentLatency = currentLatency + (targetLatency - currentLatency) * 0.25 + (Math.random() - 0.5) * 10;
+            currentError = currentError + (targetError - currentError) * 0.25;
+            
+            if (currentLatency < 20) currentLatency = 20;
+            if (currentError < 0) currentError = 0;
+            if (currentError > 100) currentError = 100;
+
+            chartData.datasets[0].data.shift();
+            chartData.datasets[0].data.push(Math.round(currentLatency));
+
+            chartData.datasets[1].data.shift();
+            chartData.datasets[1].data.push(Math.round(currentError * 10) / 10);
+
+            const maxVal = Math.max(...chartData.datasets[0].data);
+            telemetryChart.options.scales.yLatency.suggestedMax = maxVal > 200 ? maxVal * 1.15 : 200;
+
+            telemetryChart.update('none');
+        }
+
         // Mocks for DIDs matches the .env config
         let AliceDID = "did:t3n:c8eb415587d29e3155bb615149156b0ce5f2ecc5"; // Matches user private key address
         const BobDID = "did:t3:user:bob";
@@ -460,6 +607,13 @@
                 const response = await fetch(`/api/incidents?_=${Date.now()}`);
                 const list = await response.json();
                 
+                if (list.length > 0) {
+                    const latest = list[list.length - 1];
+                    updateMetrics(latest.status, latest.severity);
+                } else {
+                    updateMetrics('Resolved', 'LOW');
+                }
+                
                 const tbody = document.getElementById('incidents-rows');
                 if (list.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" class="empty-table">No active incidents triggered yet.</td></tr>`;
@@ -533,6 +687,8 @@
         }, 1500);
 
         // First load
+        initChart();
+        setInterval(stepTelemetry, 1000);
         fetchApprovals();
         fetchLedger();
     </script>

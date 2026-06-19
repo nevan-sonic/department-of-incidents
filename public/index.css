@@ -126,7 +126,7 @@ body {
 /* Base Card Grid Styles */
 .grid-layout {
     display: grid;
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: 1fr 1.15fr 1.25fr;
     gap: 2rem;
 }
 
@@ -499,8 +499,8 @@ tr:last-child td {
 
 /* Responsive media queries */
 @media screen and (max-width: 1024px) {
-    .grid-layout, .grid-layout.second-row {
-        grid-template-columns: 1fr;
+    .grid-layout, .grid-layout.second-row, .grid-layout.third-row {
+        grid-template-columns: 1fr !important;
     }
 }
 

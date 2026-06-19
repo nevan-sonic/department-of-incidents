@@ -1,1 +1,1 @@
-config.db.pool_size = 20, config.db.max_connections = 50
+Increase pool_size to 50 and configure idle_timeout to 30000, also consider implementing connection validation and efficient memory management strategies

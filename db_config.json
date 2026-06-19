@@ -1,1 +1,1 @@
-pool_size=50
+Increase the connection pool size to at least 50 (pool_size = 50) to handle increased traffic

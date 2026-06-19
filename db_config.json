@@ -1,1 +1,1 @@
-Increase pool_size to 50 and set connection_timeout to 30000, configure thread pool with a max size of 20 and a queue size of 100
+db_config.yaml: increase 'pool_size' from 10 to 50, and 'connection_timeout' from 5s to 30s

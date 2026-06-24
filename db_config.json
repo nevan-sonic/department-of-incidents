@@ -1,1 +1,1 @@
-Increase pool_size to 50 and configure idle_timeout to 30000, also consider implementing connection validation and efficient memory management strategies
+Increase the database connection pool size to at least 50 (e.g., pool_size=50) to accommodate a higher volume of concurrent queries.
